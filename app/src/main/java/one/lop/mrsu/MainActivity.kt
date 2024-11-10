@@ -1,18 +1,14 @@
-// MainActivity.kt
 package one.lop.mrsu
 
+import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
-import android.widget.Button
-import android.widget.ImageView
-import android.widget.TextView
+import android.os.Handler
+import android.os.Looper
 import android.widget.Toast
-import androidx.drawerlayout.widget.DrawerLayout
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
-import com.bumptech.glide.Glide
-import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -21,19 +17,17 @@ import one.lop.mrsu.model.User
 import one.lop.mrsu.network.RetrofitClient
 
 class MainActivity : BaseActivity() {
-
-    private lateinit var drawerLayout: DrawerLayout
+    private var toastAlreadyShown = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentLayout(R.layout.activity_main)
 
-        drawerLayout = findViewById(R.id.drawer_layout)
-
+        // Настройка зашифрованного хранилища для токенов
         val masterKey = MasterKey.Builder(this)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
             .build()
-
-        val sharedPref = EncryptedSharedPreferences.create(
+        val securePrefs = EncryptedSharedPreferences.create(
             this,
             "secure_prefs",
             masterKey,
@@ -41,66 +35,80 @@ class MainActivity : BaseActivity() {
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
 
-        val accessToken = sharedPref.getString("access_token", null)
+        // Обычное SharedPreferences для сохранения данных пользователя
+        val sharedPrefs = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        val accessToken = securePrefs.getString("access_token", null)
 
+        // Проверка токена доступа
         if (accessToken == null) {
             navigateToLogin()
         } else {
-            layoutInflater.inflate(R.layout.activity_main, findViewById(R.id.content_frame))
-            setupLogoutButton(sharedPref)
+            checkAccessToken(accessToken, securePrefs, sharedPrefs)
         }
     }
 
-    private fun setupLogoutButton(sharedPref: SharedPreferences) {
-        val btnLogout = findViewById<Button>(R.id.btnLogout)
-        btnLogout.setOnClickListener {
-            with(sharedPref.edit()) {
-                remove("access_token")
-                remove("refresh_token")
-                apply()
-            }
-            Toast.makeText(this, "Вы вышли из аккаунта", Toast.LENGTH_SHORT).show()
-            navigateToLogin()
-        }
-    }
-
-    private fun loadUserProfile(accessToken: String) {
+    private fun checkAccessToken(accessToken: String, securePrefs: SharedPreferences, sharedPrefs: SharedPreferences) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = RetrofitClient.apiInstance.getUserInfo(accessToken)
+                val response = RetrofitClient.apiInstance.ping("Bearer $accessToken")
                 withContext(Dispatchers.Main) {
-                    if (response.isSuccessful && response.body() != null) {
-                        updateUserInfo(response.body()!!)
+                    if (response.isSuccessful) {
+                        loadUserProfile("Bearer $accessToken", sharedPrefs)
                     } else {
+                        showToast(getString(R.string.error_token_expired))
                         navigateToLogin()
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(this@MainActivity, "Ошибка загрузки профиля", Toast.LENGTH_SHORT).show()
+                    showToast(getString(R.string.error_network) + ": ${e.message}")
                     navigateToLogin()
                 }
             }
         }
     }
 
-    private fun updateUserInfo(user: User) {
-        val navView = findViewById<NavigationView>(R.id.nav_view)
-        val headerView = navView.getHeaderView(0)
+    private fun loadUserProfile(accessToken: String, sharedPrefs: SharedPreferences) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = RetrofitClient.apiInstance.getUserInfo(accessToken)
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful && response.body() != null) {
+                        saveUserInfoToLocal(response.body()!!, sharedPrefs)
+                    } else {
+                        navigateToLogin()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    showToast(getString(R.string.error_network))
+                    navigateToLogin()
+                }
+            }
+        }
+    }
 
-        // Заполнение полей информации
-        val userNameView = headerView.findViewById<TextView>(R.id.userName)
-        val userEmailView = headerView.findViewById<TextView>(R.id.userEmail)
-        val userImageView = headerView.findViewById<ImageView>(R.id.userPhoto)
-
-        userNameView.text = user.FIO
-        userEmailView.text = user.Email
-
-        Glide.with(this).load(user.Photo.UrlSmall).into(userImageView)
+    private fun saveUserInfoToLocal(user: User, sharedPrefs: SharedPreferences) {
+        with(sharedPrefs.edit()) {
+            putString("user_name", user.FIO)
+            putString("user_email", user.Email)
+            putString("user_photo_url", user.Photo.UrlSmall)
+            apply()
+        }
     }
 
     private fun navigateToLogin() {
         startActivity(Intent(this, LoginActivity::class.java))
         finish()
+    }
+
+    private fun showToast(message: String) {
+        if (!toastAlreadyShown) {
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+            toastAlreadyShown = true
+            Handler(Looper.getMainLooper()).postDelayed({
+                toastAlreadyShown = false
+            }, 2000)
+        }
     }
 }

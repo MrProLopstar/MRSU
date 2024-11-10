@@ -1,0 +1,12 @@
+<!-- bottom_nav_menu.xml -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_home"
+        android:title="Главная" />
+    <item
+        android:id="@+id/nav_profile"
+        android:title="Профиль" />
+    <item
+        android:id="@+id/nav_settings"
+        android:title="Настройки" />
+</menu>
