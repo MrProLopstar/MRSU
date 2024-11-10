@@ -44,8 +44,8 @@ open class BaseActivity : AppCompatActivity() {
         toggle.syncState()
 
         setupNavigationView()
-        loadLanguage()
         loadAppTheme()
+        loadLanguage()
     }
 
     fun updateUserHeader(sharedPrefs: SharedPreferences) {
@@ -91,26 +91,17 @@ open class BaseActivity : AppCompatActivity() {
                 else -> false
             }
         }
+        updateThemeMenuItem(navView.menu.findItem(R.id.nav_theme))
     }
 
     private fun cycleAppTheme(themeItem: MenuItem) {
-        when (AppCompatDelegate.getDefaultNightMode()) {
-            AppCompatDelegate.MODE_NIGHT_NO -> {
-                setAppTheme("dark")
-                themeItem.title = getString(R.string.nav_theme_dark)
-                themeItem.setIcon(R.drawable.baseline_brightness_3_24)
-            }
-            AppCompatDelegate.MODE_NIGHT_YES -> {
-                setAppTheme("system")
-                themeItem.title = getString(R.string.nav_theme_system)
-                themeItem.setIcon(R.drawable.baseline_brightness_medium_24)
-            }
-            else -> {
-                setAppTheme("light")
-                themeItem.title = getString(R.string.nav_theme_light)
-                themeItem.setIcon(R.drawable.baseline_brightness_high_24)
-            }
+        val newTheme = when (getAppTheme()) {
+            "light" -> "dark"
+            "dark" -> "system"
+            else -> "light"
         }
+        setAppTheme(newTheme)
+        updateThemeMenuItem(themeItem) // Обновляем отображение темы в меню сразу
     }
 
     private fun setAppTheme(theme: String) {
@@ -128,14 +119,37 @@ open class BaseActivity : AppCompatActivity() {
     }
 
     private fun loadAppTheme() {
-        val theme = getSharedPreferences("app_settings", MODE_PRIVATE)
-            .getString("theme", "system")
-        setAppTheme(theme ?: "system")
+        val theme = getAppTheme()
+        setAppTheme(theme)
+    }
+
+    private fun getAppTheme(): String {
+        return getSharedPreferences("app_settings", MODE_PRIVATE)
+            .getString("theme", "system") ?: "system"
+    }
+
+    private fun updateThemeMenuItem(themeItem: MenuItem) {
+        val theme = getAppTheme()
+        when (theme) {
+            "light" -> {
+                themeItem.title = getString(R.string.nav_theme_light)
+                themeItem.setIcon(R.drawable.baseline_brightness_high_24)
+            }
+            "dark" -> {
+                themeItem.title = getString(R.string.nav_theme_dark)
+                themeItem.setIcon(R.drawable.baseline_brightness_3_24)
+            }
+            else -> {
+                themeItem.title = getString(R.string.nav_theme_system)
+                themeItem.setIcon(R.drawable.baseline_brightness_medium_24)
+            }
+        }
     }
 
     private fun toggleLanguage() {
         val newLanguage = if (Locale.getDefault().language == "ru") "en" else "ru"
         setLocale(newLanguage)
+        updateNavigationViewText()
     }
 
     private fun setLocale(languageCode: String) {
@@ -150,6 +164,13 @@ open class BaseActivity : AppCompatActivity() {
             .edit()
             .putString("language", languageCode)
             .apply()
+        updateNavigationViewText() // Обновляем отображение текста
+    }
+
+    private fun updateNavigationViewText() {
+        navView.menu.findItem(R.id.nav_logout).title = getString(R.string.nav_logout)
+        navView.menu.findItem(R.id.nav_language).title = getString(R.string.nav_language)
+        navView.menu.findItem(R.id.nav_theme).title = getString(R.string.nav_theme)
     }
 
     private fun loadLanguage() {
@@ -159,7 +180,6 @@ open class BaseActivity : AppCompatActivity() {
     }
 
     private fun logout() {
-        // Выполните логику выхода, если необходимо, и переходите на экран авторизации
         showToast(getString(R.string.logout_message))
         startActivity(Intent(this, LoginActivity::class.java))
         finish()
