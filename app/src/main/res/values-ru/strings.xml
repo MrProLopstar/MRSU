@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">MRSU</string>
+    <string name="navigation_drawer_open">Открыть шторку</string>
+    <string name="navigation_drawer_close">Закрыть шторку</string>
+
+    <!-- Меню -->
+    <string name="nav_logout">Выйти</string>
+    <string name="nav_language">Русский</string>
+    <string name="nav_theme">Тема</string>
+    <string name="nav_theme_system">Системная тема</string>
+    <string name="nav_theme_light">Светлая тема</string>
+    <string name="nav_theme_dark">Тёмная тема</string>
+
+    <!-- Ошибки и уведомления -->
+    <string name="error_token_expired">Токен истёк. Авторизуйтесь снова.</string>
+    <string name="error_network">Ошибка сети</string>
+    <string name="logout_message">Вы вышли из аккаунта</string>
+</resources>

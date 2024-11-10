@@ -1,17 +1,22 @@
 package one.lop.mrsu
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.drawerlayout.widget.DrawerLayout
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.RequestOptions
 import com.google.android.material.navigation.NavigationView
 import java.util.Locale
 
@@ -41,6 +46,26 @@ open class BaseActivity : AppCompatActivity() {
         setupNavigationView()
         loadLanguage()
         loadAppTheme()
+    }
+
+    fun updateUserHeader(sharedPrefs: SharedPreferences) {
+        val headerView = navView.getHeaderView(0)
+        val userNameView = headerView.findViewById<TextView>(R.id.userName)
+        val userEmailView = headerView.findViewById<TextView>(R.id.userEmail)
+        val userImageView = headerView.findViewById<ImageView>(R.id.userPhoto)
+
+        val userName = sharedPrefs.getString("user_name", null)
+        val userEmail = sharedPrefs.getString("user_email", null)
+        val userPhotoUrl = sharedPrefs.getString("user_photo_url", null)
+
+        userName?.let { userNameView.text = it }
+        userEmail?.let { userEmailView.text = it }
+        userPhotoUrl?.let { url ->
+            Glide.with(this)
+                .load(url)
+                .apply(RequestOptions.circleCropTransform())
+                .into(userImageView)
+        }
     }
 
     protected fun setContentLayout(layoutResID: Int) {
@@ -140,7 +165,7 @@ open class BaseActivity : AppCompatActivity() {
         finish()
     }
 
-    private fun showToast(message: String) {
+    fun showToast(message: String) {
         if (!toastAlreadyShown) {
             Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
             toastAlreadyShown = true

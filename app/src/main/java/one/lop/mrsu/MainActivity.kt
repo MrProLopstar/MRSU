@@ -4,9 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.widget.Toast
+import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import kotlinx.coroutines.CoroutineScope
@@ -17,13 +15,12 @@ import one.lop.mrsu.model.User
 import one.lop.mrsu.network.RetrofitClient
 
 class MainActivity : BaseActivity() {
-    private var toastAlreadyShown = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentLayout(R.layout.activity_main)
 
-        // Настройка зашифрованного хранилища для токенов
+        // Зашифрованное хранилище для токенов
         val masterKey = MasterKey.Builder(this)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
             .build()
@@ -35,12 +32,11 @@ class MainActivity : BaseActivity() {
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
 
-        // Обычное SharedPreferences для сохранения данных пользователя
         val sharedPrefs = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
         val accessToken = securePrefs.getString("access_token", null)
 
-        // Проверка токена доступа
-        if (accessToken == null) {
+        if (accessToken.isNullOrEmpty()) {
+            Log.d("MainActivity", "Токен отсутствует, переход на экран логина.")
             navigateToLogin()
         } else {
             checkAccessToken(accessToken, securePrefs, sharedPrefs)
@@ -53,13 +49,16 @@ class MainActivity : BaseActivity() {
                 val response = RetrofitClient.apiInstance.ping("Bearer $accessToken")
                 withContext(Dispatchers.Main) {
                     if (response.isSuccessful) {
+                        Log.d("MainActivity", "Токен действителен, загружаем профиль.")
                         loadUserProfile("Bearer $accessToken", sharedPrefs)
                     } else {
+                        Log.d("MainActivity", "Токен истек, переход на экран логина.")
                         showToast(getString(R.string.error_token_expired))
                         navigateToLogin()
                     }
                 }
             } catch (e: Exception) {
+                Log.e("MainActivity", "Ошибка при проверке токена: ${e.message}")
                 withContext(Dispatchers.Main) {
                     showToast(getString(R.string.error_network) + ": ${e.message}")
                     navigateToLogin()
@@ -75,11 +74,15 @@ class MainActivity : BaseActivity() {
                 withContext(Dispatchers.Main) {
                     if (response.isSuccessful && response.body() != null) {
                         saveUserInfoToLocal(response.body()!!, sharedPrefs)
+                        if (!isFinishing && !isDestroyed) {
+                            updateUserHeader(sharedPrefs)
+                        }
                     } else {
                         navigateToLogin()
                     }
                 }
             } catch (e: Exception) {
+                Log.e("MainActivity", "Ошибка при загрузке профиля: ${e.message}")
                 withContext(Dispatchers.Main) {
                     showToast(getString(R.string.error_network))
                     navigateToLogin()
@@ -100,15 +103,5 @@ class MainActivity : BaseActivity() {
     private fun navigateToLogin() {
         startActivity(Intent(this, LoginActivity::class.java))
         finish()
-    }
-
-    private fun showToast(message: String) {
-        if (!toastAlreadyShown) {
-            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-            toastAlreadyShown = true
-            Handler(Looper.getMainLooper()).postDelayed({
-                toastAlreadyShown = false
-            }, 2000)
-        }
     }
 }
