@@ -91,6 +91,7 @@ open class BaseActivity : AppCompatActivity() {
                 else -> false
             }
         }
+        updateNavigationViewText()
         updateThemeMenuItem(navView.menu.findItem(R.id.nav_theme))
     }
 
@@ -101,7 +102,7 @@ open class BaseActivity : AppCompatActivity() {
             else -> "light"
         }
         setAppTheme(newTheme)
-        updateThemeMenuItem(themeItem) // Обновляем отображение темы в меню сразу
+        updateThemeMenuItem(themeItem)
     }
 
     private fun setAppTheme(theme: String) {
@@ -130,26 +131,21 @@ open class BaseActivity : AppCompatActivity() {
 
     private fun updateThemeMenuItem(themeItem: MenuItem) {
         val theme = getAppTheme()
-        when (theme) {
-            "light" -> {
-                themeItem.title = getString(R.string.nav_theme_light)
-                themeItem.setIcon(R.drawable.baseline_brightness_high_24)
-            }
-            "dark" -> {
-                themeItem.title = getString(R.string.nav_theme_dark)
-                themeItem.setIcon(R.drawable.baseline_brightness_3_24)
-            }
-            else -> {
-                themeItem.title = getString(R.string.nav_theme_system)
-                themeItem.setIcon(R.drawable.baseline_brightness_medium_24)
-            }
+        themeItem.title = when (theme) {
+            "light" -> getString(R.string.nav_theme_light)
+            "dark" -> getString(R.string.nav_theme_dark)
+            else -> getString(R.string.nav_theme_system)
+        }
+        themeItem.icon = when (theme) {
+            "light" -> getDrawable(R.drawable.baseline_brightness_high_24)
+            "dark" -> getDrawable(R.drawable.baseline_brightness_3_24)
+            else -> getDrawable(R.drawable.baseline_brightness_medium_24)
         }
     }
 
     private fun toggleLanguage() {
-        val newLanguage = if (Locale.getDefault().language == "ru") "en" else "ru"
+        val newLanguage = if (getSavedLanguage() == "ru") "en" else "ru"
         setLocale(newLanguage)
-        updateNavigationViewText()
     }
 
     private fun setLocale(languageCode: String) {
@@ -164,7 +160,8 @@ open class BaseActivity : AppCompatActivity() {
             .edit()
             .putString("language", languageCode)
             .apply()
-        updateNavigationViewText() // Обновляем отображение текста
+
+        updateNavigationViewText()
     }
 
     private fun updateNavigationViewText() {
@@ -174,9 +171,13 @@ open class BaseActivity : AppCompatActivity() {
     }
 
     private fun loadLanguage() {
-        val languageCode = getSharedPreferences("app_settings", MODE_PRIVATE)
-            .getString("language", Locale.getDefault().language)
-        setLocale(languageCode ?: Locale.getDefault().language)
+        val languageCode = getSavedLanguage()
+        setLocale(languageCode)
+    }
+
+    private fun getSavedLanguage(): String {
+        return getSharedPreferences("app_settings", MODE_PRIVATE)
+            .getString("language", Locale.getDefault().language) ?: Locale.getDefault().language
     }
 
     private fun logout() {

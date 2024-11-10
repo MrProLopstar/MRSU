@@ -16,41 +16,49 @@ import one.lop.mrsu.network.RetrofitClient
 
 class MainActivity : BaseActivity() {
 
+    private lateinit var securePrefs: SharedPreferences
+    private lateinit var sharedPrefs: SharedPreferences
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentLayout(R.layout.activity_main)
+        initPreferences()
 
-        // Зашифрованное хранилище для токенов
-        val masterKey = MasterKey.Builder(this)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-        val securePrefs = EncryptedSharedPreferences.create(
-            this,
-            "secure_prefs",
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
-
-        val sharedPrefs = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
         val accessToken = securePrefs.getString("access_token", null)
 
         if (accessToken.isNullOrEmpty()) {
             Log.d("MainActivity", "Токен отсутствует, переход на экран логина.")
             navigateToLogin()
         } else {
-            checkAccessToken(accessToken, securePrefs, sharedPrefs)
+            checkAccessToken(accessToken)
         }
     }
 
-    private fun checkAccessToken(accessToken: String, securePrefs: SharedPreferences, sharedPrefs: SharedPreferences) {
+    private fun initPreferences() {
+        val masterKey = MasterKey.Builder(this)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+
+        securePrefs = EncryptedSharedPreferences.create(
+            this,
+            "secure_prefs",
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+        sharedPrefs = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+    }
+
+    private fun checkAccessToken(accessToken: String) {
+        if (isFinishing || isDestroyed) return
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val response = RetrofitClient.apiInstance.ping("Bearer $accessToken")
                 withContext(Dispatchers.Main) {
                     if (response.isSuccessful) {
                         Log.d("MainActivity", "Токен действителен, загружаем профиль.")
-                        loadUserProfile("Bearer $accessToken", sharedPrefs)
+                        loadUserProfile("Bearer $accessToken")
                     } else {
                         Log.d("MainActivity", "Токен истек, переход на экран логина.")
                         showToast(getString(R.string.error_token_expired))
@@ -67,13 +75,15 @@ class MainActivity : BaseActivity() {
         }
     }
 
-    private fun loadUserProfile(accessToken: String, sharedPrefs: SharedPreferences) {
+    private fun loadUserProfile(accessToken: String) {
+        if (isFinishing || isDestroyed) return
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val response = RetrofitClient.apiInstance.getUserInfo(accessToken)
                 withContext(Dispatchers.Main) {
                     if (response.isSuccessful && response.body() != null) {
-                        saveUserInfoToLocal(response.body()!!, sharedPrefs)
+                        saveUserInfoToLocal(response.body()!!)
                         if (!isFinishing && !isDestroyed) {
                             updateUserHeader(sharedPrefs)
                         }
@@ -91,7 +101,7 @@ class MainActivity : BaseActivity() {
         }
     }
 
-    private fun saveUserInfoToLocal(user: User, sharedPrefs: SharedPreferences) {
+    private fun saveUserInfoToLocal(user: User) {
         with(sharedPrefs.edit()) {
             putString("user_name", user.FIO)
             putString("user_email", user.Email)
