@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">MRSU</string>
+    <string name="navigation_drawer_open">Открыть шторку</string>
+    <string name="navigation_drawer_close">Закрыть шторку</string>
+</resources>
