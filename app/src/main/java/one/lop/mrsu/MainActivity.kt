@@ -84,12 +84,8 @@ class MainActivity : BaseActivity() {
                 withContext(Dispatchers.Main) {
                     if (response.isSuccessful && response.body() != null) {
                         saveUserInfoToLocal(response.body()!!)
-                        if (!isFinishing && !isDestroyed) {
-                            updateUserHeader(sharedPrefs)
-                        }
-                    } else {
-                        navigateToLogin()
-                    }
+                        if(!isFinishing && !isDestroyed) updateUserHeader(sharedPrefs)
+                    } else navigateToLogin()
                 }
             } catch (e: Exception) {
                 Log.e("MainActivity", "Ошибка при загрузке профиля: ${e.message}")

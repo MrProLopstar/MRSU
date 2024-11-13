@@ -61,10 +61,9 @@ class LoginActivity : AppCompatActivity() {
                         tvToken.text = "Access Token: $accessToken\nRefresh Token: $refreshToken"
                         saveTokens(accessToken, refreshToken)
 
-                        // Переход на MainActivity после успешной авторизации
                         val intent = Intent(this@LoginActivity, MainActivity::class.java)
                         startActivity(intent)
-                        finish() // Завершаем LoginActivity, чтобы пользователь не мог вернуться назад
+                        finish()
                     } else {
                         tvToken.text = "Ошибка авторизации"
                         Toast.makeText(this@LoginActivity, "Неверный логин или пароль", Toast.LENGTH_SHORT).show()
