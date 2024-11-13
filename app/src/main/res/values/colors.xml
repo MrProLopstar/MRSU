@@ -8,4 +8,5 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="gray">#4B4B4B</color>
+    <color name="drawer_background">#FFFFFF</color>
 </resources>

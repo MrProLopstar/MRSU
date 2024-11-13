@@ -1,23 +1,34 @@
-<!-- res/menu/drawer_menu.xml -->
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Кнопка выхода -->
+
+    <!-- Верхняя группа меню -->
     <item
         android:id="@+id/nav_logout"
         android:icon="@drawable/baseline_logout_24"
         android:title="@string/nav_logout" />
 
-    <!-- Раздел для выбора языка и темы -->
+    <!-- Пустое пространство для разделения -->
+    <item
+        android:id="@+id/nav_space"
+        android:title=""
+        android:enabled="false"
+        android:icon="@android:color/transparent" />
+
+    <!-- Нижняя группа для выбора языка и темы -->
     <group android:checkableBehavior="none">
+
         <!-- Выбор языка -->
         <item
             android:id="@+id/nav_language"
             android:icon="@drawable/baseline_language_24"
-            android:title="@string/nav_language" />
+            android:title="@string/nav_language"
+            android:layout_gravity="bottom" />
 
         <!-- Выбор темы -->
         <item
             android:id="@+id/nav_theme"
             android:icon="@drawable/baseline_brightness_medium_24"
-            android:title="@string/nav_theme_system" />
+            android:title="@string/nav_theme"
+            android:layout_gravity="bottom" />
+
     </group>
 </menu>

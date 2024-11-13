@@ -1,5 +1,6 @@
 package one.lop.mrsu
 
+import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
@@ -16,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.drawerlayout.widget.DrawerLayout
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.google.android.material.navigation.NavigationView
 import java.util.Locale
@@ -27,6 +29,7 @@ open class BaseActivity : AppCompatActivity() {
     private var toastAlreadyShown = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        applyAppTheme()  // Применяем тему до setContentView
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_base)
 
@@ -44,8 +47,13 @@ open class BaseActivity : AppCompatActivity() {
         toggle.syncState()
 
         setupNavigationView()
-        loadAppTheme()
+        updateThemeMenuItem(navView.menu.findItem(R.id.nav_theme))  // Обновляем тему в меню
         loadLanguage()
+    }
+
+    protected fun setContentLayout(layoutResID: Int) {
+        val contentFrame = findViewById<FrameLayout>(R.id.content_frame)
+        LayoutInflater.from(this).inflate(layoutResID, contentFrame, true)
     }
 
     fun updateUserHeader(sharedPrefs: SharedPreferences) {
@@ -60,17 +68,16 @@ open class BaseActivity : AppCompatActivity() {
 
         userName?.let { userNameView.text = it }
         userEmail?.let { userEmailView.text = it }
+
         userPhotoUrl?.let { url ->
             Glide.with(this)
                 .load(url)
                 .apply(RequestOptions.circleCropTransform())
+                .placeholder(R.drawable.ic_user_placeholder) // Иконка-заглушка для плавности загрузки
+                .error(R.drawable.ic_user_placeholder)             // Иконка на случай ошибки
+                .diskCacheStrategy(DiskCacheStrategy.ALL)  // Кеширование для предотвращения повторной загрузки
                 .into(userImageView)
         }
-    }
-
-    protected fun setContentLayout(layoutResID: Int) {
-        val contentFrame = findViewById<FrameLayout>(R.id.content_frame)
-        LayoutInflater.from(this).inflate(layoutResID, contentFrame, true)
     }
 
     private fun setupNavigationView() {
@@ -92,7 +99,6 @@ open class BaseActivity : AppCompatActivity() {
             }
         }
         updateNavigationViewText()
-        updateThemeMenuItem(navView.menu.findItem(R.id.nav_theme))
     }
 
     private fun cycleAppTheme(themeItem: MenuItem) {
@@ -106,26 +112,27 @@ open class BaseActivity : AppCompatActivity() {
     }
 
     private fun setAppTheme(theme: String) {
-        val mode = when (theme) {
+        val nightMode = when (theme) {
             "light" -> AppCompatDelegate.MODE_NIGHT_NO
             "dark" -> AppCompatDelegate.MODE_NIGHT_YES
-            else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+            else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM // автоматическая смена темы по системной настройке
         }
-        AppCompatDelegate.setDefaultNightMode(mode)
+        AppCompatDelegate.setDefaultNightMode(nightMode)
 
-        getSharedPreferences("app_settings", MODE_PRIVATE)
+        // Сохраняем выбранную тему
+        getSharedPreferences("app_settings", Context.MODE_PRIVATE)
             .edit()
             .putString("theme", theme)
             .apply()
     }
 
-    private fun loadAppTheme() {
+    private fun applyAppTheme() {
         val theme = getAppTheme()
         setAppTheme(theme)
     }
 
     private fun getAppTheme(): String {
-        return getSharedPreferences("app_settings", MODE_PRIVATE)
+        return getSharedPreferences("app_settings", Context.MODE_PRIVATE)
             .getString("theme", "system") ?: "system"
     }
 
