@@ -36,6 +36,7 @@ dependencies {
     implementation(platform("androidx.compose:compose-bom:2024.10.01"))
     implementation("androidx.security:security-crypto:1.1.0-alpha03")
     implementation("com.github.bumptech.glide:glide:4.15.1")
+    implementation("com.google.android.material:material:1.9.0")
 
     // Зависимости Compose без указания версий
     implementation("androidx.compose.ui:ui")

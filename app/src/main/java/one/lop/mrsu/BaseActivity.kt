@@ -7,9 +7,9 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.LayoutInflater
-import android.view.MenuItem
 import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.ActionBarDrawerToggle
@@ -17,8 +17,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.drawerlayout.widget.DrawerLayout
 import com.bumptech.glide.Glide
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.request.RequestOptions
 import com.google.android.material.navigation.NavigationView
 import java.util.Locale
 
@@ -29,7 +27,7 @@ open class BaseActivity : AppCompatActivity() {
     private var toastAlreadyShown = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        applyAppTheme()  // Применяем тему до setContentView
+        applyAppTheme()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_base)
 
@@ -46,9 +44,25 @@ open class BaseActivity : AppCompatActivity() {
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
 
-        setupNavigationView()
-        updateThemeMenuItem(navView.menu.findItem(R.id.nav_theme))  // Обновляем тему в меню
-        loadLanguage()
+        findViewById<LinearLayout>(R.id.btn_language).setOnClickListener {
+            toggleLanguage()
+        }
+
+        findViewById<LinearLayout>(R.id.btn_theme).setOnClickListener {
+            cycleAppTheme()
+        }
+
+        findViewById<LinearLayout>(R.id.btn_logout).setOnClickListener {
+            logout()
+        }
+
+        updateBottomMenu()
+        updateThemeMenuUI()
+    }
+
+    private fun applyAppTheme() {
+        val theme = getAppTheme()
+        setAppTheme(theme)
     }
 
     protected fun setContentLayout(layoutResID: Int) {
@@ -57,6 +71,7 @@ open class BaseActivity : AppCompatActivity() {
     }
 
     fun updateUserHeader(sharedPrefs: SharedPreferences) {
+        val navView = findViewById<NavigationView>(R.id.nav_view)
         val headerView = navView.getHeaderView(0)
         val userNameView = headerView.findViewById<TextView>(R.id.userName)
         val userEmailView = headerView.findViewById<TextView>(R.id.userEmail)
@@ -72,63 +87,74 @@ open class BaseActivity : AppCompatActivity() {
         userPhotoUrl?.let { url ->
             Glide.with(this)
                 .load(url)
-                .apply(RequestOptions.circleCropTransform())
-                .placeholder(R.drawable.ic_user_placeholder) // Иконка-заглушка для плавности загрузки
-                .error(R.drawable.ic_user_placeholder)             // Иконка на случай ошибки
-                .diskCacheStrategy(DiskCacheStrategy.ALL)  // Кеширование для предотвращения повторной загрузки
+                .circleCrop()
+                .placeholder(R.drawable.ic_user_placeholder) // Иконка-заглушка
+                .error(R.drawable.ic_user_placeholder) // Иконка на случай ошибки
                 .into(userImageView)
         }
     }
 
-    private fun setupNavigationView() {
-        navView.setNavigationItemSelectedListener { menuItem ->
-            when (menuItem.itemId) {
-                R.id.nav_logout -> {
-                    logout()
-                    true
-                }
-                R.id.nav_language -> {
-                    toggleLanguage()
-                    true
-                }
-                R.id.nav_theme -> {
-                    cycleAppTheme(menuItem)
-                    true
-                }
-                else -> false
-            }
+    private fun updateBottomMenu() {
+        findViewById<TextView>(R.id.btn_language_text).text = getString(R.string.nav_language)
+        val themeText = findViewById<TextView>(R.id.btn_theme_text)
+        themeText.text = when (getAppTheme()) {
+            "light" -> getString(R.string.nav_theme_light)
+            "dark" -> getString(R.string.nav_theme_dark)
+            else -> getString(R.string.nav_theme_system)
         }
-        updateNavigationViewText()
     }
 
-    private fun cycleAppTheme(themeItem: MenuItem) {
+    private fun cycleAppTheme() {
         val newTheme = when (getAppTheme()) {
             "light" -> "dark"
             "dark" -> "system"
             else -> "light"
         }
         setAppTheme(newTheme)
-        updateThemeMenuItem(themeItem)
+        updateThemeMenuUI()
+        recreate()
+    }
+
+    private fun updateThemeMenuUI() {
+        val themeText = findViewById<TextView>(R.id.btn_theme_text)
+        val themeIcon = findViewById<ImageView>(R.id.btn_theme_icon)
+        val bottomSection = findViewById<LinearLayout>(R.id.nav_bottom_section)
+
+        themeText.text = when (getAppTheme()) {
+            "light" -> getString(R.string.nav_theme_light)
+            "dark" -> getString(R.string.nav_theme_dark)
+            else -> getString(R.string.nav_theme_system)
+        }
+
+        themeIcon.setImageResource(
+            when (getAppTheme()) {
+                "light" -> R.drawable.baseline_brightness_high_24
+                "dark" -> R.drawable.baseline_brightness_3_24
+                else -> R.drawable.baseline_brightness_medium_24
+            }
+        )
+
+        // Обновление цвета нижней секции
+        val backgroundColor = when (getAppTheme()) {
+            "light" -> R.color.white
+            "dark" -> R.color.black
+            else -> R.color.white
+        }
+        bottomSection.setBackgroundColor(resources.getColor(backgroundColor, theme))
     }
 
     private fun setAppTheme(theme: String) {
         val nightMode = when (theme) {
             "light" -> AppCompatDelegate.MODE_NIGHT_NO
             "dark" -> AppCompatDelegate.MODE_NIGHT_YES
-            else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM // автоматическая смена темы по системной настройке
+            else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
         }
         AppCompatDelegate.setDefaultNightMode(nightMode)
 
-        // Сохраняем выбранную тему
         getSharedPreferences("app_settings", Context.MODE_PRIVATE)
             .edit()
             .putString("theme", theme)
             .apply()
-    }
-
-    private fun applyAppTheme() {
-        val theme = getAppTheme()
-        setAppTheme(theme)
     }
 
     private fun getAppTheme(): String {
@@ -136,23 +162,10 @@ open class BaseActivity : AppCompatActivity() {
             .getString("theme", "system") ?: "system"
     }
 
-    private fun updateThemeMenuItem(themeItem: MenuItem) {
-        val theme = getAppTheme()
-        themeItem.title = when (theme) {
-            "light" -> getString(R.string.nav_theme_light)
-            "dark" -> getString(R.string.nav_theme_dark)
-            else -> getString(R.string.nav_theme_system)
-        }
-        themeItem.icon = when (theme) {
-            "light" -> getDrawable(R.drawable.baseline_brightness_high_24)
-            "dark" -> getDrawable(R.drawable.baseline_brightness_3_24)
-            else -> getDrawable(R.drawable.baseline_brightness_medium_24)
-        }
-    }
-
     private fun toggleLanguage() {
         val newLanguage = if (getSavedLanguage() == "ru") "en" else "ru"
         setLocale(newLanguage)
+        recreate()
     }
 
     private fun setLocale(languageCode: String) {
@@ -161,25 +174,18 @@ open class BaseActivity : AppCompatActivity() {
 
         val config = resources.configuration
         config.setLocale(locale)
-        resources.updateConfiguration(config, resources.displayMetrics)
 
+        // Создаем новый контекст с обновленной конфигурацией
+        val context = createConfigurationContext(config)
+
+        // Обновляем ресурсы приложения
+        resources.updateConfiguration(context.resources.configuration, context.resources.displayMetrics)
+
+        // Сохраняем выбранный язык в SharedPreferences
         getSharedPreferences("app_settings", MODE_PRIVATE)
             .edit()
             .putString("language", languageCode)
             .apply()
-
-        updateNavigationViewText()
-    }
-
-    private fun updateNavigationViewText() {
-        navView.menu.findItem(R.id.nav_logout).title = getString(R.string.nav_logout)
-        navView.menu.findItem(R.id.nav_language).title = getString(R.string.nav_language)
-        navView.menu.findItem(R.id.nav_theme).title = getString(R.string.nav_theme)
-    }
-
-    private fun loadLanguage() {
-        val languageCode = getSavedLanguage()
-        setLocale(languageCode)
     }
 
     private fun getSavedLanguage(): String {

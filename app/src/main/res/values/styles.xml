@@ -1,0 +1,13 @@
+<resources>
+    <style name="BottomNavigationViewStyle" parent="Widget.Design.BottomNavigationView">
+        <item name="itemIconTint">@color/color_selector</item>
+        <item name="itemTextColor">@color/color_selector</item>
+        <item name="android:background">@color/bottom_nav_background</item>
+    </style>
+
+    <style name="BottomNavigationViewStyle.Dark" parent="Widget.Design.BottomNavigationView">
+        <item name="itemIconTint">@color/color_selector_dark</item>
+        <item name="itemTextColor">@color/color_selector_dark</item>
+        <item name="android:background">@color/dark_surface</item>
+    </style>
+</resources>
