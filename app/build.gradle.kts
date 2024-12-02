@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "one.lop.mrsu"  // Убедитесь, что совпадает с namespace
-        minSdk = 26
+        minSdk = 28
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -37,6 +37,8 @@ dependencies {
     implementation("androidx.security:security-crypto:1.1.0-alpha03")
     implementation("com.github.bumptech.glide:glide:4.15.1")
     implementation("com.google.android.material:material:1.9.0")
+    implementation("com.prolificinteractive:material-calendarview:1.4.3")
+    implementation("com.android.support:support-compat:25.1.1")
 
     // Зависимости Compose без указания версий
     implementation("androidx.compose.ui:ui")
@@ -51,6 +53,7 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.9.3")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation(libs.material)
+    implementation(libs.car.ui.lib)
 
     // Зависимости для тестирования
     testImplementation("junit:junit:4.13.2")
