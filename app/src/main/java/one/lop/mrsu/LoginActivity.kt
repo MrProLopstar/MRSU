@@ -1,7 +1,7 @@
 package one.lop.mrsu
 
-import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import one.lop.mrsu.network.RetrofitClient
+import android.util.Log
 
 class LoginActivity : AppCompatActivity() {
 
@@ -22,11 +23,31 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var etPassword: EditText
     private lateinit var btnLogin: Button
     private lateinit var tvToken: TextView // TextView для отображения токена
+    private lateinit var securePrefs: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.login)
 
+        initPreferences()
+        initUI()
+    }
+
+    private fun initPreferences() {
+        val masterKey = MasterKey.Builder(this)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+
+        securePrefs = EncryptedSharedPreferences.create(
+            this,
+            "secure_prefs", // Убедитесь, что имя файла совпадает
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+    }
+
+    private fun initUI() {
         etUsername = findViewById(R.id.etUsername)
         etPassword = findViewById(R.id.etPassword)
         btnLogin = findViewById(R.id.btnLogin)
@@ -61,6 +82,9 @@ class LoginActivity : AppCompatActivity() {
                         tvToken.text = "Access Token: $accessToken\nRefresh Token: $refreshToken"
                         saveTokens(accessToken, refreshToken)
 
+                        Log.d("LoginActivity", "Tokens saved: accessToken=$accessToken, refreshToken=$refreshToken")
+
+                        // Переход на MainActivity
                         val intent = Intent(this@LoginActivity, MainActivity::class.java)
                         startActivity(intent)
                         finish()
@@ -79,19 +103,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun saveTokens(accessToken: String, refreshToken: String) {
-        val masterKey = MasterKey.Builder(this)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-
-        val sharedPref = EncryptedSharedPreferences.create(
-            this,
-            "secure_prefs",
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
-
-        with(sharedPref.edit()) {
+        with(securePrefs.edit()) {
             putString("access_token", accessToken)
             putString("refresh_token", refreshToken)
             apply()

@@ -5,9 +5,7 @@ import android.content.SharedPreferences
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.LayoutInflater
 import android.view.MenuItem
-import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -17,23 +15,38 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import java.util.Locale
+import android.util.Log
 
 open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
-    private lateinit var drawerLayout: DrawerLayout
-    private lateinit var navView: NavigationView
-    private lateinit var bottomNavigationView: BottomNavigationView
+    protected lateinit var drawerLayout: DrawerLayout
+    protected lateinit var navView: NavigationView
+    protected lateinit var bottomNavigationView: BottomNavigationView
+    protected lateinit var securePrefs: SharedPreferences
     private var toastAlreadyShown = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        applyAppTheme()
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_base)
+        super.onCreate(savedInstanceState) // Вызов super первым
+        setContentView(R.layout.activity_base) // Установка содержимого
 
+        initPreferences() // Инициализация securePrefs
+        applyAppTheme() // Применение темы после инициализации securePrefs
+        initializeUI() // Инициализация UI компонентов
+
+        // Устанавливаем начальный фрагмент, если это не восстановление состояния
+        if (savedInstanceState == null) {
+            bottomNavigationView.selectedItemId = R.id.nav_home
+        }
+    }
+
+    private fun initializeUI() {
         drawerLayout = findViewById(R.id.drawer_layout)
         navView = findViewById(R.id.nav_view)
         bottomNavigationView = findViewById(R.id.bottom_navigation)
@@ -51,6 +64,7 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
         navView.setNavigationItemSelectedListener(this)
         setupBottomNavigation()
 
+        // Обработчики для бокового меню
         findViewById<LinearLayout>(R.id.btn_language).setOnClickListener {
             toggleLanguage()
         }
@@ -70,13 +84,11 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
         bottomNavigationView.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_home -> {
-                    startActivity(Intent(this, MainActivity::class.java))
-                    finish()
+                    replaceFragment(HomeFragment(), "Home")
                     true
                 }
                 R.id.nav_schedule -> {
-                    startActivity(Intent(this, ScheduleActivity::class.java))
-                    finish()
+                    replaceFragment(ScheduleFragment(), "Schedule")
                     true
                 }
                 R.id.nav_settings -> {
@@ -86,31 +98,59 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
                 else -> false
             }
         }
+
+        // Сброс фрагмента при повторном выборе вкладки
+        bottomNavigationView.setOnItemReselectedListener { item ->
+            when (item.itemId) {
+                R.id.nav_home -> {
+                    val fragment = supportFragmentManager.findFragmentByTag("Home")
+                    if (fragment is HomeFragment) {
+                        fragment.scrollToTop()
+                    }
+                }
+                R.id.nav_schedule -> {
+                    val fragment = supportFragmentManager.findFragmentByTag("Schedule")
+                    if (fragment is ScheduleFragment) {
+                        fragment.scrollToTop()
+                    }
+                }
+                // Добавьте обработку других пунктов по необходимости
+            }
+        }
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.nav_home -> {
-                startActivity(Intent(this, MainActivity::class.java))
-                finish()
+                replaceFragment(HomeFragment(), "Home")
             }
             R.id.nav_schedule -> {
-                startActivity(Intent(this, ScheduleActivity::class.java))
-                finish()
+                replaceFragment(ScheduleFragment(), "Schedule")
             }
         }
         drawerLayout.closeDrawer(GravityCompat.START)
         return true
     }
 
-    private fun applyAppTheme() {
-        val theme = getAppTheme()
-        setAppTheme(theme)
+    private fun replaceFragment(fragment: Fragment, tag: String) {
+        val currentFragment = getCurrentFragment()
+        if (currentFragment != null && currentFragment::class.java == fragment::class.java) {
+            // Фрагмент уже отображается, ничего не делаем
+            return
+        }
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.content_frame, fragment, tag)
+            .commit()
     }
 
-    protected fun setContentLayout(layoutResID: Int) {
-        val contentFrame = findViewById<FrameLayout>(R.id.content_frame)
-        LayoutInflater.from(this).inflate(layoutResID, contentFrame, true)
+    private fun getCurrentFragment(): Fragment? {
+        return supportFragmentManager.findFragmentById(R.id.content_frame)
+    }
+
+    private fun applyAppTheme() {
+        val theme = getAppTheme()
+        Log.d("BaseActivity", "Applying theme: $theme")
+        setAppTheme(theme)
     }
 
     private fun cycleAppTheme() {
@@ -151,15 +191,15 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
         }
         AppCompatDelegate.setDefaultNightMode(nightMode)
 
-        getSharedPreferences("app_settings", MODE_PRIVATE)
-            .edit()
+        securePrefs.edit()
             .putString("theme", theme)
             .apply()
     }
 
     private fun getAppTheme(): String {
-        return getSharedPreferences("app_settings", MODE_PRIVATE)
-            .getString("theme", "system") ?: "system"
+        val theme = securePrefs.getString("theme", "system") ?: "system"
+        Log.d("BaseActivity", "Retrieved theme: $theme")
+        return theme
     }
 
     private fun toggleLanguage() {
@@ -178,19 +218,21 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
         val context = createConfigurationContext(config)
         resources.updateConfiguration(context.resources.configuration, context.resources.displayMetrics)
 
-        getSharedPreferences("app_settings", MODE_PRIVATE)
-            .edit()
+        securePrefs.edit()
             .putString("language", languageCode)
             .apply()
     }
 
     private fun getSavedLanguage(): String {
-        return getSharedPreferences("app_settings", MODE_PRIVATE)
-            .getString("language", Locale.getDefault().language) ?: Locale.getDefault().language
+        return securePrefs.getString("language", Locale.getDefault().language) ?: Locale.getDefault().language
     }
 
     private fun logout() {
         showToast(getString(R.string.logout_message))
+        navigateToLogin()
+    }
+
+    open fun navigateToLogin() {
         startActivity(Intent(this, LoginActivity::class.java))
         finish()
     }
@@ -227,5 +269,19 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
                 .error(R.drawable.ic_user_placeholder) // Иконка на случай ошибки
                 .into(userImageView)
         }
+    }
+
+    private fun initPreferences() {
+        val masterKey = MasterKey.Builder(this)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+
+        securePrefs = EncryptedSharedPreferences.create(
+            this,
+            "secure_prefs",
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
     }
 }

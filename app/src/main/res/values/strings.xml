@@ -15,4 +15,7 @@
     <string name="nav_profile">Profile</string>
     <string name="nav_settings">Settings</string>
     <string name="nav_schedule">Schedule</string>
+    <string name="error_token_missing">Token is missing. Please log in again.</string>
+    <string name="error_loading_schedule">Error loading schedule</string>
+    <string name="error">Error</string>
 </resources>

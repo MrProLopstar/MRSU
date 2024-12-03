@@ -15,11 +15,8 @@
         android:theme="@style/Theme.MRSU"
         tools:targetApi="31">
 
+        <!-- LoginActivity объявлена как Launcher Activity -->
         <activity android:name=".LoginActivity"
-            android:exported="true" />
-
-        <!-- MainActivity -->
-        <activity android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -27,8 +24,9 @@
             </intent-filter>
         </activity>
 
-        <!-- ScheduleActivity -->
-        <activity android:name=".ScheduleActivity"
-            android:exported="true" />
+        <!-- MainActivity не имеет intent-filter и будет запускаться программно -->
+        <activity android:name=".MainActivity"
+            android:exported="false" />
     </application>
+
 </manifest>

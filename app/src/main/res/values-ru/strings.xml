@@ -15,4 +15,7 @@
     <string name="nav_profile">Профиль</string>
     <string name="nav_settings">Настройки</string>
     <string name="nav_schedule">Расписание</string>
+    <string name="error_token_missing">Токен отсутствует. Пожалуйста, войдите снова.</string>
+    <string name="error_loading_schedule">Ошибка загрузки расписания</string>
+    <string name="error">Ошибка</string>
 </resources>

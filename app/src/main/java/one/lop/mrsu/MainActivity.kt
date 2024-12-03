@@ -5,8 +5,6 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -16,15 +14,16 @@ import one.lop.mrsu.network.RetrofitClient
 
 class MainActivity : BaseActivity() {
 
-    private lateinit var securePrefs: SharedPreferences
     private lateinit var sharedPrefs: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentLayout(R.layout.activity_main)
+        // BaseActivity уже устанавливает содержимое и управляет фрагментами
+
         initPreferences()
 
         val accessToken = securePrefs.getString("access_token", null)
+        Log.d("MainActivity", "Access token: $accessToken")
 
         if (accessToken.isNullOrEmpty()) {
             Log.d("MainActivity", "Токен отсутствует, переход на экран логина.")
@@ -35,18 +34,7 @@ class MainActivity : BaseActivity() {
     }
 
     private fun initPreferences() {
-        val masterKey = MasterKey.Builder(this)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-
-        securePrefs = EncryptedSharedPreferences.create(
-            this,
-            "secure_prefs",
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
-        sharedPrefs = getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        sharedPrefs = getSharedPreferences("secure_prefs", Context.MODE_PRIVATE)
     }
 
     private fun checkAccessToken(accessToken: String) {
@@ -84,8 +72,10 @@ class MainActivity : BaseActivity() {
                 withContext(Dispatchers.Main) {
                     if (response.isSuccessful && response.body() != null) {
                         saveUserInfoToLocal(response.body()!!)
-                        if(!isFinishing && !isDestroyed) updateUserHeader(sharedPrefs)
-                    } else navigateToLogin()
+                        if (!isFinishing && !isDestroyed) updateUserHeader(sharedPrefs)
+                    } else {
+                        navigateToLogin()
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("MainActivity", "Ошибка при загрузке профиля: ${e.message}")
@@ -106,7 +96,7 @@ class MainActivity : BaseActivity() {
         }
     }
 
-    private fun navigateToLogin() {
+    override fun navigateToLogin() {
         startActivity(Intent(this, LoginActivity::class.java))
         finish()
     }
