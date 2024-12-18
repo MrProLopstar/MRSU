@@ -111,7 +111,7 @@ open class BaseActivity : AppCompatActivity(), NavigationView.OnNavigationItemSe
                 R.id.nav_schedule -> {
                     val fragment = supportFragmentManager.findFragmentByTag("Schedule")
                     if (fragment is ScheduleFragment) {
-                        fragment.scrollToTop()
+                        //fragment.scrollToTop()
                     }
                 }
                 // Добавьте обработку других пунктов по необходимости

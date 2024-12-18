@@ -1,66 +1,59 @@
-<!-- res/layout/fragment_schedule.xml -->
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- Выбор диапазона: Месяц, Неделя, День -->
     <com.google.android.material.button.MaterialButtonToggleGroup
         android:id="@+id/toggle_group"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp">
+        android:layout_marginBottom="8dp"
+        app:singleSelection="true"
+        android:orientation="horizontal">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_month"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:text="Месяц" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_week"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:text="Неделя" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_day"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="День" />
     </com.google.android.material.button.MaterialButtonToggleGroup>
 
-    <!-- Календарь -->
     <com.prolificinteractive.materialcalendarview.MaterialCalendarView
         android:id="@+id/material_calendar_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:mcv_showOtherDates="all"
-        app:mcv_selectionColor="@color/teal_200"/>
-
-    <!-- Список расписания -->
-    <TextView
-        android:id="@+id/tv_date"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Дата: 2024-12-02"
-        android:textSize="18sp"
-        android:padding="8dp"
-        android:background="@color/gray"
-        android:textColor="@android:color/white"
-        android:gravity="center" />
+        app:mcv_selectionColor="@color/teal_200" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/schedule_list"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:paddingTop="8dp"
-        android:scrollbars="vertical" />
+        android:layout_height="match_parent"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        android:scrollbars="vertical"
+        android:visibility="visible" />
+
+    <TextView
+        android:id="@+id/empty_schedule_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:layout_gravity="center"
+        android:text="На выбранную дату расписание отсутствует."
+        android:visibility="gone"
+        android:textSize="18sp"
+        android:textColor="@android:color/darker_gray" />
 </LinearLayout>

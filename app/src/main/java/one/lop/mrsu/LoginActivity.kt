@@ -1,52 +1,39 @@
 package one.lop.mrsu
 
 import android.content.Intent
-import android.content.SharedPreferences
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
+import androidx.annotation.RequiresExtension
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import one.lop.mrsu.network.RetrofitClient
-import android.util.Log
+import one.lop.mrsu.util.TokenManager
+import java.io.IOException
+import retrofit2.HttpException
 
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var etUsername: EditText
     private lateinit var etPassword: EditText
     private lateinit var btnLogin: Button
-    private lateinit var tvToken: TextView // TextView для отображения токена
-    private lateinit var securePrefs: SharedPreferences
+    private lateinit var tvToken: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.login)
 
-        initPreferences()
         initUI()
     }
 
-    private fun initPreferences() {
-        val masterKey = MasterKey.Builder(this)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-
-        securePrefs = EncryptedSharedPreferences.create(
-            this,
-            "secure_prefs", // Убедитесь, что имя файла совпадает
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
-    }
-
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     private fun initUI() {
         etUsername = findViewById(R.id.etUsername)
         etPassword = findViewById(R.id.etPassword)
@@ -65,6 +52,7 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     private fun performLogin(username: String, password: String) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -80,7 +68,9 @@ class LoginActivity : AppCompatActivity() {
                         val accessToken = response.body()!!.access_token
                         val refreshToken = response.body()!!.refresh_token
                         tvToken.text = "Access Token: $accessToken\nRefresh Token: $refreshToken"
-                        saveTokens(accessToken, refreshToken)
+
+                        // Сохранение токенов в глобальное хранилище
+                        TokenManager.saveTokens(accessToken, refreshToken)
 
                         Log.d("LoginActivity", "Tokens saved: accessToken=$accessToken, refreshToken=$refreshToken")
 
@@ -93,20 +83,25 @@ class LoginActivity : AppCompatActivity() {
                         Toast.makeText(this@LoginActivity, "Неверный логин или пароль", Toast.LENGTH_SHORT).show()
                     }
                 }
+            } catch (e: HttpException) {
+                withContext(Dispatchers.Main) {
+                    Log.e("LoginActivity", "HTTP Error: ${e.message}")
+                    tvToken.text = "Ошибка: ${e.message}"
+                    Toast.makeText(this@LoginActivity, "HTTP ошибка: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            } catch (e: IOException) {
+                withContext(Dispatchers.Main) {
+                    Log.e("LoginActivity", "Network Error: ${e.message}")
+                    tvToken.text = "Ошибка сети: ${e.message}"
+                    Toast.makeText(this@LoginActivity, "Проблемы с сетью: ${e.message}", Toast.LENGTH_LONG).show()
+                }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    tvToken.text = "Ошибка: ${e.message}"
-                    Toast.makeText(this@LoginActivity, "Произошла ошибка: ${e.message}", Toast.LENGTH_LONG).show()
+                    Log.e("LoginActivity", "Unexpected Error: ${e.message}")
+                    tvToken.text = "Произошла непредвиденная ошибка: ${e.message}"
+                    Toast.makeText(this@LoginActivity, "Неизвестная ошибка: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
-        }
-    }
-
-    private fun saveTokens(accessToken: String, refreshToken: String) {
-        with(securePrefs.edit()) {
-            putString("access_token", accessToken)
-            putString("refresh_token", refreshToken)
-            apply()
         }
     }
 }

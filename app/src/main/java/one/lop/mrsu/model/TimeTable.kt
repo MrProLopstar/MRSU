@@ -1,49 +1,99 @@
 package one.lop.mrsu.model
+import com.google.gson.annotations.SerializedName
 
-import java.util.*
-
-data class TimeTable(
+data class Group(
+    @SerializedName("Group")
     val group: String,
+
+    @SerializedName("PlanNumber")
     val planNumber: String,
+
+    @SerializedName("FacultyName")
     val facultyName: String,
-    val timeTableBlockId: Int,
-    val timeTable: DailyTimeTable
+
+    @SerializedName("TimeTableBlockd")
+    val timeTableBlockd: Int,
+
+    @SerializedName("TimeTable")
+    val timeTable: DailyTimeTable? // Исправлено: теперь это один объект, а не список
 )
 
 data class DailyTimeTable(
-    val date: Date,
-    val lessons: List<Lesson>
+    @SerializedName("Date")
+    val date: String,
+
+    @SerializedName("Lessons")
+    val lessons: List<Lesson> // Список уроков на эту дату
 )
 
+
 data class Lesson(
+    @SerializedName("Number")
     val number: Int,
+
+    @SerializedName("SubgroupCount")
     val subgroupCount: Int,
+
+    @SerializedName("Disciplines")
     val disciplines: List<Discipline>
 )
 
 data class Discipline(
+    @SerializedName("Id")
     val id: Int,
+
+    @SerializedName("Title")
     val title: String,
-    val language: String,
+
+    @SerializedName("Language")
+    val language: String?,
+
+    @SerializedName("LessonType")
     val lessonType: Int,
+
+    @SerializedName("Remote")
     val remote: Boolean,
+
+    @SerializedName("Group")
     val group: String,
+
+    @SerializedName("SubgroupNumber")
     val subgroupNumber: Int,
-    val teacher: Teacher,
-    val auditorium: Auditorium
+
+    @SerializedName("Teacher")
+    val teacher: Teacher?,
+
+    @SerializedName("Auditorium")
+    val auditorium: Auditorium?
 )
 
 data class Teacher(
+    @SerializedName("Id")
     val id: String,
+
+    @SerializedName("UserName")
     val userName: String,
+
+    @SerializedName("FIO")
     val fio: String,
-    val photo: Photo
+
+    @SerializedName("Photo")
+    val photo: Photo?
 )
 
 data class Auditorium(
+    @SerializedName("Id")
     val id: Int,
+
+    @SerializedName("Number")
     val number: String,
+
+    @SerializedName("Title")
     val title: String,
+
+    @SerializedName("CampusId")
     val campusId: Int,
+
+    @SerializedName("CampusTitle")
     val campusTitle: String
 )

@@ -1,8 +1,6 @@
 package one.lop.mrsu
 
-import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
@@ -14,73 +12,49 @@ import one.lop.mrsu.network.RetrofitClient
 
 class MainActivity : BaseActivity() {
 
-    private lateinit var sharedPrefs: SharedPreferences
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // BaseActivity уже устанавливает содержимое и управляет фрагментами
 
-        initPreferences()
-
-        val accessToken = securePrefs.getString("access_token", null)
-        Log.d("MainActivity", "Access token: $accessToken")
-
-        if (accessToken.isNullOrEmpty()) {
-            Log.d("MainActivity", "Токен отсутствует, переход на экран логина.")
-            navigateToLogin()
-        } else {
-            checkAccessToken(accessToken)
-        }
+        checkAccessToken()
     }
 
-    private fun initPreferences() {
-        sharedPrefs = getSharedPreferences("secure_prefs", Context.MODE_PRIVATE)
-    }
-
-    private fun checkAccessToken(accessToken: String) {
-        if (isFinishing || isDestroyed) return
-
+    private fun checkAccessToken() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = RetrofitClient.apiInstance.ping("Bearer $accessToken")
+                val response = RetrofitClient.apiInstance.ping()
                 withContext(Dispatchers.Main) {
                     if (response.isSuccessful) {
-                        Log.d("MainActivity", "Токен действителен, загружаем профиль.")
-                        loadUserProfile("Bearer $accessToken")
+                        Log.d("MainActivity", "Access token is valid. Loading profile.")
+                        loadUserProfile()
                     } else {
-                        Log.d("MainActivity", "Токен истек, переход на экран логина.")
-                        showToast(getString(R.string.error_token_expired))
+                        Log.d("MainActivity", "Access token is invalid. Redirecting to login.")
                         navigateToLogin()
                     }
                 }
             } catch (e: Exception) {
-                Log.e("MainActivity", "Ошибка при проверке токена: ${e.message}")
+                Log.e("MainActivity", "Error checking access token: ${e.message}")
                 withContext(Dispatchers.Main) {
-                    showToast(getString(R.string.error_network) + ": ${e.message}")
                     navigateToLogin()
                 }
             }
         }
     }
 
-    private fun loadUserProfile(accessToken: String) {
-        if (isFinishing || isDestroyed) return
-
+    private fun loadUserProfile() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = RetrofitClient.apiInstance.getUserInfo(accessToken)
+                val response = RetrofitClient.apiInstance.getUserInfo()
                 withContext(Dispatchers.Main) {
                     if (response.isSuccessful && response.body() != null) {
                         saveUserInfoToLocal(response.body()!!)
-                        if (!isFinishing && !isDestroyed) updateUserHeader(sharedPrefs)
                     } else {
+                        Log.e("MainActivity", "Failed to load user profile. Redirecting to login.")
                         navigateToLogin()
                     }
                 }
             } catch (e: Exception) {
-                Log.e("MainActivity", "Ошибка при загрузке профиля: ${e.message}")
+                Log.e("MainActivity", "Error loading user profile: ${e.message}")
                 withContext(Dispatchers.Main) {
-                    showToast(getString(R.string.error_network))
                     navigateToLogin()
                 }
             }
@@ -88,12 +62,8 @@ class MainActivity : BaseActivity() {
     }
 
     private fun saveUserInfoToLocal(user: User) {
-        with(sharedPrefs.edit()) {
-            putString("user_name", user.FIO)
-            putString("user_email", user.Email)
-            putString("user_photo_url", user.Photo.UrlSmall)
-            apply()
-        }
+        // Сохранение данных пользователя локально
+        Log.d("MainActivity", "User data saved: ${user.FIO}")
     }
 
     override fun navigateToLogin() {
