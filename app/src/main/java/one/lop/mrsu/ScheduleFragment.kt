@@ -114,7 +114,7 @@ class ScheduleFragment : Fragment(R.layout.fragment_schedule) {
         val snapHelper = LinearSnapHelper()
         snapHelper.attachToRecyclerView(recyclerView)
 
-        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+        /*recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             private var totalScroll = 0
 
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -143,7 +143,7 @@ class ScheduleFragment : Fragment(R.layout.fragment_schedule) {
                     totalScroll = 0
                 }
             }
-        })
+        })*/
     }
 
     private fun updateCurrentDate() {
