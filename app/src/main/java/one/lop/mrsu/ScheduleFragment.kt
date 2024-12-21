@@ -7,6 +7,7 @@ import android.view.View
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.prolificinteractive.materialcalendarview.CalendarMode
 import com.prolificinteractive.materialcalendarview.MaterialCalendarView
@@ -30,6 +31,11 @@ class ScheduleFragment : Fragment(R.layout.fragment_schedule) {
     private lateinit var toggleGroup: MaterialButtonToggleGroup
     private lateinit var cacheManager: CacheManager
 
+    private val calendar = Calendar.getInstance()
+    private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    private var currentDate = dateFormat.format(calendar.time)
+    private var isLoading = false
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -37,33 +43,15 @@ class ScheduleFragment : Fragment(R.layout.fragment_schedule) {
         cacheManager.clearOldCache()
 
         initUI(view)
+        setupCalendar()
+        setupToggleButton()
+        setupSwipeListener()
+
         scheduleAdapter = ScheduleAdapter(emptyList())
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = scheduleAdapter
 
-        val currentDate = getCurrentDate()
-        prefetchScheduleForRange(currentDate)
         loadScheduleForDate(currentDate)
-
-        toggleGroup.check(R.id.btn_week)
-        toggleGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
-            if (isChecked) {
-                when (checkedId) {
-                    R.id.btn_month -> loadCalendarView("month")
-                    R.id.btn_week -> loadCalendarView("week")
-                }
-                loadScheduleForDate(currentDate)
-            }
-        }
-
-        materialCalendarView.setOnDateChangedListener { _, date, _ ->
-            val formattedDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date.date)
-            loadScheduleForDate(formattedDate)
-        }
-
-        setCalendarLocale(Locale.getDefault())
-        materialCalendarView.setDateSelected(Calendar.getInstance(), true)
-        loadCalendarView("week")
     }
 
     private fun initUI(view: View) {
@@ -73,104 +61,143 @@ class ScheduleFragment : Fragment(R.layout.fragment_schedule) {
         toggleGroup = view.findViewById(R.id.toggle_group)
     }
 
-    private fun prefetchScheduleForRange(centerDate: String) {
-        val calendar = Calendar.getInstance()
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    private fun setupCalendar() {
+        materialCalendarView.state().edit()
+            .setFirstDayOfWeek(Calendar.MONDAY)
+            .setCalendarDisplayMode(CalendarMode.WEEKS)
+            .commit()
 
-        CoroutineScope(Dispatchers.IO).launch {
-            for (offset in -3..3) {
-                calendar.time = dateFormat.parse(centerDate) ?: continue
-                calendar.add(Calendar.DAY_OF_YEAR, offset)
-                val date = dateFormat.format(calendar.time)
+        materialCalendarView.setTitleFormatter { day ->
+            val month = SimpleDateFormat("LLLL yyyy", Locale.getDefault())
+                .format(day.date)
+            month.replaceFirstChar { it.uppercase() }
+        }
 
-                if (cacheManager.getGroupsForDate(date) == null) {
-                    try {
-                        val response = RetrofitClient.apiInstance.getStudentTimeTable(date)
-                        if (response.isSuccessful) {
-                            response.body()?.let { groups ->
-                                cacheManager.saveGroupsForDate(date, groups)
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Log.e("ScheduleFragment", "Failed to prefetch data for date $date: ${e.message}")
+        materialCalendarView.setOnDateChangedListener { _, date, _ ->
+            calendar.time = date.date
+            currentDate = dateFormat.format(calendar.time)
+            updateCurrentDate()
+        }
+
+        materialCalendarView.setDateSelected(calendar.time, true)
+    }
+
+    private fun setupToggleButton() {
+        toggleGroup.check(R.id.btn_week)
+        toggleGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (isChecked) {
+                when (checkedId) {
+                    R.id.btn_month -> {
+                        materialCalendarView.state().edit()
+                            .setCalendarDisplayMode(CalendarMode.MONTHS)
+                            .commit()
+                        postCheckButton(R.id.btn_month)
+                    }
+                    R.id.btn_week -> {
+                        materialCalendarView.state().edit()
+                            .setCalendarDisplayMode(CalendarMode.WEEKS)
+                            .commit()
+                        postCheckButton(R.id.btn_week)
                     }
                 }
             }
         }
     }
 
+    private fun postCheckButton(buttonId: Int) {
+        toggleGroup.post {
+            toggleGroup.check(buttonId)
+        }
+    }
+
+    private fun setupSwipeListener() {
+        val snapHelper = LinearSnapHelper()
+        snapHelper.attachToRecyclerView(recyclerView)
+
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            private var totalScroll = 0
+
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                totalScroll += dy
+            }
+
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                    val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
+                    val lastVisibleItemPosition = layoutManager.findLastVisibleItemPosition()
+                    val itemCount = layoutManager.itemCount
+
+                    if (firstVisibleItemPosition == 0 && totalScroll < 0) {
+                        calendar.add(Calendar.DAY_OF_YEAR, -1)
+                        currentDate = dateFormat.format(calendar.time)
+                        updateCurrentDate()
+                    }
+                    if (lastVisibleItemPosition == itemCount - 1 && totalScroll > 0) {
+                        calendar.add(Calendar.DAY_OF_YEAR, 1)
+                        currentDate = dateFormat.format(calendar.time)
+                        updateCurrentDate()
+                    }
+
+                    totalScroll = 0
+                }
+            }
+        })
+    }
+
+    private fun updateCurrentDate() {
+        materialCalendarView.clearSelection()
+        materialCalendarView.setDateSelected(calendar.time, true)
+        loadScheduleForDate(currentDate)
+    }
+
     private fun loadScheduleForDate(date: String) {
+        if (isLoading) return
+        isLoading = true
+
         val cachedGroups = cacheManager.getGroupsForDate(date)
         if (cachedGroups != null) {
-            Log.d("ScheduleFragment", "Using cached data for date: $date")
             updateSchedule(cachedGroups)
+            isLoading = false
         } else {
             CoroutineScope(Dispatchers.Main).launch {
                 try {
                     val response = RetrofitClient.apiInstance.getStudentTimeTable(date)
                     if (response.isSuccessful) {
                         val groups = response.body() ?: emptyList()
-                        Log.d("ScheduleFragment", "API Response for date $date: ${groups.size} groups")
-                        groups.forEach { group ->
-                            Log.d("ScheduleFragment", "Group: $group")
-                        }
                         cacheManager.saveGroupsForDate(date, groups)
                         updateSchedule(groups)
                     } else {
-                        Log.w("ScheduleFragment", "No schedule available for date: $date")
                         showEmptyMessage()
                     }
                 } catch (e: Exception) {
-                    Log.e("ScheduleFragment", "Failed to load schedule for date $date: ${e.message}")
+                    emptyMessageView.text = getString(R.string.loading_error)
                     showEmptyMessage()
                 }
+                isLoading = false
             }
         }
     }
 
     private fun updateSchedule(groups: List<Group>) {
-        val allLessons = groups.flatMap { group ->
-            listOfNotNull(group.timeTable?.lessons).flatten() // Исправлено
+        val hasLessons = groups.any { group ->
+            group.timeTable?.lessons?.isNotEmpty() == true
         }
 
-        if (allLessons.isNotEmpty()) {
+        if (hasLessons) {
             recyclerView.visibility = View.VISIBLE
             emptyMessageView.visibility = View.GONE
-            scheduleAdapter.updateData(allLessons)
+            scheduleAdapter.updateData(groups)
         } else {
             showEmptyMessage()
         }
     }
 
-
     private fun showEmptyMessage() {
+        Log.d("ScheduleFragment", "Empty message is being shown.")
         recyclerView.visibility = View.GONE
+        emptyMessageView.text = getString(R.string.no_schedule)
         emptyMessageView.visibility = View.VISIBLE
-    }
-
-    private fun setCalendarLocale(locale: Locale) {
-        val dateFormat = SimpleDateFormat("MMMM yyyy", locale)
-        materialCalendarView.setTitleFormatter { calendarDay ->
-            dateFormat.format(calendarDay.date).replaceFirstChar { it.uppercase() }
-        }
-        materialCalendarView.state().edit()
-            .setFirstDayOfWeek(Calendar.MONDAY)
-            .commit()
-    }
-
-    private fun getCurrentDate(): String {
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        return dateFormat.format(Calendar.getInstance().time)
-    }
-
-    private fun loadCalendarView(range: String) {
-        when (range) {
-            "month" -> materialCalendarView.state().edit()
-                .setCalendarDisplayMode(CalendarMode.MONTHS)
-                .commit()
-            "week" -> materialCalendarView.state().edit()
-                .setCalendarDisplayMode(CalendarMode.WEEKS)
-                .commit()
-        }
     }
 }

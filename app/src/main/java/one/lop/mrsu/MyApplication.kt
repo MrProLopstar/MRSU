@@ -13,6 +13,14 @@ class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
-        TokenManager.init(this) // Инициализация TokenManager с application context
+        TokenManager.init(this)
+        android.util.Log.d("MyApplication", "Application created, TokenManager initialized")
     }
+
+    fun isLoggedIn(): Boolean {
+        val accessToken = TokenManager.getAccessToken()
+        val refreshToken = TokenManager.getRefreshToken()
+        return !accessToken.isNullOrEmpty() && !refreshToken.isNullOrEmpty()
+    }
+
 }

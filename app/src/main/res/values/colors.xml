@@ -1,11 +1,7 @@
 <resources>
     <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
     <color name="bottom_nav_selected">#6200EE</color>
     <color name="bottom_nav_unselected">#9E9E9E</color>
     <color name="bottom_nav_background">#FFFFFF</color>
@@ -16,7 +12,30 @@
     <color name="dark_secondary_variant">#3700B3</color>
     <color name="dark_surface">#1E1E1E</color>
     <color name="dark_background">#121212</color>
-    <color name="gray">#4B4B4B</color>
     <color name="dark_accent">#BB86FC</color>
-    <color name="gray_light">#B0B0B0</color>
+    <color name="primaryColor">#FFD700</color>
+    <color name="secondaryColor">#800080</color>
+    <color name="backgroundLight">#FFF8E1</color>
+    <color name="accentColor">#FFA500</color>
+    <color name="purple_700">#6A00FF</color>
+    <color name="purple_500">#8A2BE2</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="gray">#808080</color>
+    <color name="gray_light">#E0E0E0</color>
+    <color name="gray_dark">#757575</color>
+    <color name="calendar_selection_color">#C5A3D9</color>
+    <color name="text_on_purple">#F5F5F5</color>
+    <color name="primaryTextColor">#212121</color>
+    <color name="secondaryTextColor">#757575</color>
+    <color name="background">#F5F5F5</color>
+    <color name="itemBackground">#FFFFFF</color>
+    <color name="textPrimary">#333333</color>
+    <color name="textSecondary">#555555</color>
+    <color name="secondaryBackground">#EAF2F8</color>
+    <color name="backgroundColor">#F3F4F6</color>
+    <color name="inputBackground">#FFFFFF</color>
+    <color name="borderColor">#CCCCCC</color>
+    <color name="buttonColor">#6200EE</color>
+    <color name="hintColor">#9E9E9E</color>
 </resources>

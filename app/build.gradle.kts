@@ -1,24 +1,31 @@
 plugins {
-    id("com.android.application") version "8.5.2"
-    id("org.jetbrains.kotlin.android") version "1.9.0"
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("kotlin-kapt")
 }
 
 android {
-    namespace = "one.lop.mrsu"  // Укажите ваш namespace
+    namespace = "one.lop.mrsu"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "one.lop.mrsu"  // Убедитесь, что совпадает с namespace
+        applicationId = "one.lop.mrsu"
         minSdk = 28
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+        resConfigs("en", "ru")
     }
+
 
     buildTypes {
         release {
-            isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            isShrinkResources = true
+            isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 
@@ -26,44 +33,37 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
     kotlinOptions {
         jvmTarget = "17"
+    }
+
+    kapt {
+        correctErrorTypes = true
+        mapDiagnosticLocations = true
+        useBuildCache = true
     }
 }
 
 dependencies {
-    // Подключение BOM для Compose
     implementation(platform("androidx.compose:compose-bom:2024.10.01"))
-    implementation("androidx.security:security-crypto:1.1.0-alpha03")
-    implementation("com.github.bumptech.glide:glide:4.15.1")
-    implementation("com.google.android.material:material:1.9.0")
-    implementation("com.prolificinteractive:material-calendarview:1.4.3")
-    implementation("com.android.support:support-compat:25.1.1")
-
-    // Зависимости Compose без указания версий
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-graphics")
-    implementation("androidx.compose.ui:ui-tooling")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3")
-
-    // Прочие зависимости
     implementation("androidx.core:core-ktx:1.10.1")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
-    implementation("androidx.activity:activity-compose:1.9.3")
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation(libs.material)
-    implementation(libs.car.ui.lib)
-
-    // Зависимости для тестирования
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
-
-    // Зависимости для работы с сетью
+    implementation("com.google.android.material:material:1.11.0")
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.9.0")
+    implementation("com.squareup.okhttp3:okhttp:4.10.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.10.0")
+    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
+    implementation("com.prolificinteractive:material-calendarview:1.4.3")
+    implementation("com.github.bumptech.glide:glide:4.15.1")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.15.1")
+    implementation("androidx.security:security-crypto:1.1.0-alpha03")
+    implementation("com.google.code.gson:gson:2.10.1")
+    implementation("jp.wasabeef:glide-transformations:4.3.0")
+    implementation("androidx.recyclerview:recyclerview:1.3.1")
+    implementation("com.github.bumptech.glide:glide:4.15.1")
+    kapt("com.github.bumptech.glide:compiler:4.15.1")
 }
+

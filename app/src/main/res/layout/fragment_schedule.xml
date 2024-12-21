@@ -1,15 +1,15 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="8dp">
 
     <com.google.android.material.button.MaterialButtonToggleGroup
         android:id="@+id/toggle_group"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="4dp"
         app:singleSelection="true"
         android:orientation="horizontal">
 
@@ -19,7 +19,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Месяц" />
+            android:text="@string/month_button" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_week"
@@ -27,22 +27,23 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Неделя" />
+            android:text="@string/week_button" />
     </com.google.android.material.button.MaterialButtonToggleGroup>
 
     <com.prolificinteractive.materialcalendarview.MaterialCalendarView
         android:id="@+id/material_calendar_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:mcv_showOtherDates="all"
-        app:mcv_selectionColor="@color/teal_200" />
+        app:mcv_selectionColor="@color/calendar_selection_color"
+        app:mcv_tileHeight="40dp"
+        app:mcv_weekDayTextAppearance="@style/CalendarDayStyle" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/schedule_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
         android:scrollbars="vertical"
         android:visibility="visible" />
 
@@ -52,8 +53,8 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:layout_gravity="center"
-        android:text="На выбранную дату расписание отсутствует."
+        android:text="@string/no_schedule"
         android:visibility="gone"
-        android:textSize="18sp"
+        android:textSize="16sp"
         android:textColor="@android:color/darker_gray" />
 </LinearLayout>

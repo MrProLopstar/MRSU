@@ -1,18 +1,29 @@
 package one.lop.mrsu.model
 
-data class User(
-    val Id: String,
-    val Email: String,
-    val FIO: String,
-    val EnglishFIO: String,
-    val StudentCode: String,
-    val BirthDate: String,
-    val UserName: String,
-    val Photo: Photo
-)
+import com.google.gson.annotations.SerializedName
 
-data class Photo(
-    val UrlSmall: String,
-    val UrlMedium: String,
-    val UrlSource: String
+data class User(
+    @SerializedName("Id")
+    val id: String? = null,
+
+    @SerializedName("Email")
+    val email: String? = null,
+
+    @SerializedName("FIO")
+    val fio: String? = null,
+
+    @SerializedName("EnglishFIO")
+    val englishFio: String? = null,
+
+    @SerializedName("StudentCode")
+    val studentCode: String? = null,
+
+    @SerializedName("BirthDate")
+    val birthDate: String? = null,
+
+    @SerializedName("UserName")
+    val userName: String? = null,
+
+    @SerializedName("Photo")
+    val photo: Photo? = null
 )

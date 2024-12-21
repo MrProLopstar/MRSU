@@ -19,7 +19,7 @@ object RetrofitClient {
     private fun provideOkHttpClient(): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
-            .addInterceptor(AuthInterceptor(MyApplication.instance)) // Добавляем перехватчик
+            .addInterceptor(AuthInterceptor(MyApplication.instance))
             .build()
     }
 

@@ -1,5 +1,6 @@
 package one.lop.mrsu.model
 import com.google.gson.annotations.SerializedName
+import one.lop.mrsu.model.Photo
 
 data class Group(
     @SerializedName("Group")
@@ -15,7 +16,7 @@ data class Group(
     val timeTableBlockd: Int,
 
     @SerializedName("TimeTable")
-    val timeTable: DailyTimeTable? // Исправлено: теперь это один объект, а не список
+    val timeTable: DailyTimeTable?
 )
 
 data class DailyTimeTable(
@@ -23,7 +24,7 @@ data class DailyTimeTable(
     val date: String,
 
     @SerializedName("Lessons")
-    val lessons: List<Lesson> // Список уроков на эту дату
+    val lessons: List<Lesson>
 )
 
 
@@ -75,7 +76,7 @@ data class Teacher(
     val userName: String,
 
     @SerializedName("FIO")
-    val fio: String,
+    var fio: String,
 
     @SerializedName("Photo")
     val photo: Photo?

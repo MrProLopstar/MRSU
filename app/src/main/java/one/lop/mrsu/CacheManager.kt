@@ -10,7 +10,6 @@ class CacheManager(context: Context) {
     private val sharedPreferences = context.getSharedPreferences("schedule_cache", Context.MODE_PRIVATE)
     private val gson = Gson()
 
-    // Сохранить данные расписания для группы
     fun saveGroupsForDate(date: String, groups: List<Group>) {
         if (groups.isNotEmpty() && groups.any { it.group != null && it.timeTable != null }) {
             val json = gson.toJson(groups)
@@ -22,7 +21,6 @@ class CacheManager(context: Context) {
         logFullCache()
     }
 
-    // Получить данные расписания для группы
     fun getGroupsForDate(date: String): List<Group>? {
         val json = sharedPreferences.getString("cached_$date", null)
         if (json != null) {
@@ -48,7 +46,6 @@ class CacheManager(context: Context) {
         return null
     }
 
-    // Предварительное удаление устаревшего кэша
     fun clearOldCache() {
         val validDates = getValidDateKeys()
         val allKeys = sharedPreferences.all.keys
@@ -70,7 +67,6 @@ class CacheManager(context: Context) {
         }.toSet()
     }
 
-    // Логирует весь кэш
     private fun logFullCache() {
         val allEntries = sharedPreferences.all
         Log.d("CacheManager", "Full cache content:")
